@@ -73,6 +73,33 @@ void Game::update(sf::Time deltaTime) {
     // 3. APPLICAZIONE DELL'ATTRITO E SPOSTAMENTO
     m_velocity *= std::pow(m_drag, dt * 60.f); // Attrito indipendente dal framerate
     m_ship.move(m_velocity * dt); // SPostamento: p = p + v * dt
+
+    // 4. GESTIONE DELLO SCREEN WRAPPING
+    handleScreenWrapping();
+}
+
+void Game::handleScreenWrapping(){
+    sf::Vector2f pos = m_ship.getPosition();
+
+    // Se esce a sinistra -> Riappare a destra
+    if(pos.x < 0.f){
+        pos.x = GAME_WIDTH;
+    }
+    // Se esce a destra -> Riappare a sinistra
+    else if(pos.x > GAME_WIDTH){
+        pos.x -= GAME_WIDTH;
+    }
+
+    // Se esce in alto -> Riappare in basso
+    if(pos.y < 0.f){
+        pos.y = GAME_HEIGHT;
+    }
+    // Se esce in basso -> Riappare in alto
+    else if(pos.y > GAME_HEIGHT){
+        pos.y -= GAME_HEIGHT;
+    }
+
+    m_ship.setPosition(pos);
 }
 
 // Disegno a schermo

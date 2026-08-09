@@ -26,4 +26,7 @@ private:
     float m_rotationSpeed = 200.f; // Gradi al secondo
     float m_acceleration = 300.f; // Pixel al secondo^2
     float m_drag = 0.985f; //Attrito per rallentare gradualmente la navicella quando non si preme alcun tasto
+
+    // --- NUOVO METODO TAPPA 03 ---
+    void handleScreenWrapping();
 };
