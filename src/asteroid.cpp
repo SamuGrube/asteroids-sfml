@@ -1,4 +1,4 @@
-#include "Asteroid.hpp"
+#include "headers/asteroid.hpp"
 
 Asteroid::Asteroid(sf::Vector2f position, float radius)
     : m_radius(radius) 
@@ -23,7 +23,7 @@ Asteroid::Asteroid(sf::Vector2f position, float radius)
     m_shape.setPointCount(points);
 
     for (std::size_t i = 0; i < points; ++i) {
-        float a = (static_cast(i) / static_cast(points)) * 2.f * 3.14159f;
+        float a = (static_cast<float>(i) / static_cast<float>(points)) * 2.f * 3.14159f;
         float r = m_radius * radiusJitter(gen);
         m_shape.setPoint(i, sf::Vector2f(std::cos(a) * r, std::sin(a) * r));
     }

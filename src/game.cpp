@@ -132,6 +132,10 @@ void Game::handleScreenWrapping(){
 void Game::render() {
     m_window.clear(sf::Color::Black);
     m_window.draw(m_ship);
+    // Disegno asteroidi
+    for (const auto& asteroid : m_asteroids) {
+        asteroid.draw(m_window);
+    }
     m_window.display();
 }
 

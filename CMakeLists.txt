@@ -12,7 +12,8 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(tappa04 
+add_executable(tappa04
+    src/asteroid.cpp
     src/game.cpp 
     src/main.cpp)
 target_compile_features(tappa04 PRIVATE cxx_std_17)
