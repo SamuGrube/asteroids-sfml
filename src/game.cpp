@@ -1,7 +1,7 @@
 #include "headers/game.hpp"
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 01", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 02", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
@@ -49,7 +49,30 @@ void Game::processEvents() {
 
 // Aggiornamento della logica (nella Tappa 01 non c'è movimento, quindi è vuoto)
 void Game::update(sf::Time deltaTime) {
-    // Qui, nella Tappa 02, sposteremo la navicella!
+    float dt = deltaTime.asSeconds(); //Tempo trascorso dall'ultimo frame in secondi
+
+    // 1. ROTAZIONE (Sinistra/Destra)
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)){
+        m_ship.rotate(sf::degrees(-m_rotationSpeed * dt)); //Rotazione antioraria
+    }
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)){
+        m_ship.rotate(sf::degrees(m_rotationSpeed * dt)); //Rotazione oraria
+    }
+
+    // 2. ACCELERAZIONE (Su / W)
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)){
+        float radians = m_ship.getRotation().asRadians(); //Angolo di rotazione della navicella in radianti
+
+        // Calcoliamo la direzione verso cui punta la prua (0 gradi in SFML è rivolto in alto con la nostra forma)
+        sf::Vector2f direction(std::sin(radians), -std::cos(radians));
+
+        // Incrementiamo la velocità: v = v + a * dt
+        m_velocity += direction * m_acceleration * dt;
+    }
+
+    // 3. APPLICAZIONE DELL'ATTRITO E SPOSTAMENTO
+    m_velocity *= std::pow(m_drag, dt * 60.f); // Attrito indipendente dal framerate
+    m_ship.move(m_velocity * dt); // SPostamento: p = p + v * dt
 }
 
 // Disegno a schermo
