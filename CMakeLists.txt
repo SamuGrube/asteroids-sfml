@@ -12,10 +12,10 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(tappa03 
+add_executable(tappa04 
     src/game.cpp 
     src/main.cpp)
-target_compile_features(tappa03 PRIVATE cxx_std_17)
-target_link_libraries(tappa03 PRIVATE SFML::Graphics SFML::Window SFML::System)
+target_compile_features(tappa04 PRIVATE cxx_std_17)
+target_link_libraries(tappa04 PRIVATE SFML::Graphics SFML::Window SFML::System)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
