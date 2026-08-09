@@ -1,5 +1,6 @@
 #pragma once //Viene incluso una sola volta per file di compilazione
 #include <SFML/Graphics.hpp>
+#include "headers/asteroid.hpp"
 
 class Game {
 public:
@@ -29,4 +30,9 @@ private:
 
     // --- NUOVO METODO TAPPA 03 ---
     void handleScreenWrapping();
+
+    // --- NUOVO METODO TAPPA 04 ---
+    void spawnAsteroids(std::size_t count);
+
+    std::vector m_asteroids; // Contenitore per gli asteroidi
 };

@@ -1,7 +1,7 @@
 #include "headers/game.hpp"
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 02", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 04", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
@@ -20,6 +20,27 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 02", sf::
     m_ship.setOutlineColor(sf::Color::White);
     m_ship.setOutlineThickness(2.f);
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+
+    //5 asteroidi iniziali
+    spawnAsteroids(5);
+}
+
+void Game::spawnAsteroids(std::size_t count){
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution xDist(0.f, GAME_WIDTH);
+    std::uniform_real_distribution yDist(0.f, GAME_HEIGHT);
+
+    for(std::size_t i = 0; i<count; ++i){
+        sf::Vector2f pos;
+
+        // Assicuriamoci che l'asteroide non venga generato troppo vicino alla navicella
+        do {
+            pos = sf::Vector2f(xDist(gen), yDist(gen));
+        }while (std::hypot(pos.x - GAME_WIDTH / 2.f, pos.y - GAME_HEIGHT / 2.f) < 150.f);
+
+        m_asteroids.emplace_back(pos, 40.f); // Aggiungiamo un nuovo asteroide con raggio 40
+    }
 }
 
 // Il ciclo principale del gioco
@@ -76,6 +97,11 @@ void Game::update(sf::Time deltaTime) {
 
     // 4. GESTIONE DELLO SCREEN WRAPPING
     handleScreenWrapping();
+
+    // 5. AGGIORNAMENTO DEGLI ASTEROIDI
+    for(auto& asteroid : m_asteroids){
+        asteroid.update(deltaTime, GAME_WIDTH, GAME_HEIGHT);
+    }
 }
 
 void Game::handleScreenWrapping(){
