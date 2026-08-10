@@ -3,6 +3,7 @@
 #include <vector>
 #include <random>
 #include <cmath>
+#include <algorithm>
 #include "asteroid.hpp"
 #include "bullet.hpp"
 
