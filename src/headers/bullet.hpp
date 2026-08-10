@@ -9,6 +9,7 @@ public:
     void update(sf::Time deltaTime, float gameWidth, float gameHeight);
     void draw(sf::RenderWindow& window) const;
     bool isDead() const { return m_isDead; }
+    sf::Vector2f getPosition() const { return m_shape.getPosition(); }
 
 private:
     sf::CircleShape m_shape;

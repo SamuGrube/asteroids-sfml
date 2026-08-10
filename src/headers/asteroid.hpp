@@ -10,6 +10,12 @@ public:
     void update(sf::Time deltaTime, float gameWidth, float gameHeight);
     void draw(sf::RenderWindow& window) const;
 
+    // --- NUOVI METODI TAPPA 06 ---
+    sf::Vector2f getPosition() const { return m_shape.getPosition(); }
+    float getRadius() const { return m_radius; }
+    bool isDead() const { return m_isDead; }
+    void setDead(bool dead) { m_isDead = dead; }
+
 private:
     void handleScreenWrapping(float gameWidth, float gameHeight);
 
@@ -17,4 +23,5 @@ private:
     sf::Vector2f    m_velocity;
     float           m_rotationSpeed;
     float           m_radius;
+    bool            m_isDead;
 };

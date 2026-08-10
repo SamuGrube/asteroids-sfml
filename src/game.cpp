@@ -118,6 +118,47 @@ void Game::update(sf::Time deltaTime) {
     m_bullets.erase(std::remove_if(m_bullets.begin(), m_bullets.end(), [](const Bullet& b) {
         return b.isDead();
     }), m_bullets.end());
+
+    // 7. GESTIONE DELLE COLLISIONI TRA PROIETTILI E ASTEROIDI
+    std::vector<Asteroid> newAsteroids; // Contenitore per i nuovi asteroidi generati dalla distruzione di quelli vecchi
+    for(auto& asteroid : m_asteroids){
+        if(bullet.isDead()) continue;
+
+        for(auto& asteroid : m_asteroids){
+            if(asteroid.isDead()) continue;
+
+            if(getDistance(bullet.getPosition(), asteroid.getPosition()) < asteroid.getRadius()){
+                bullet.setDead(true);
+                asteroid.setDead(true);
+
+                //Se il raggio è > 20px, divide l'asteroide in due più piccoli
+                if(asteroid.getRadius() > 20.f){
+                    float newRadius = asteroid.getRadius() /2.f
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                }
+                break;
+            }
+        }
+    }
+
+    // 8. COLLISIONI TRA NAVICELLA E ASTEROIDI
+    float shipRadius = 15.f; // Raggio approssimativo della navicella
+    for(auto& asteroid : m_asteroids){
+        if(asteroid.isDead()) continue;
+
+        if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
+            //Respawn della navicella al centro dello schermo
+            m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+            m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+            break;
+        }
+    }
+
+    // 9. RIMOZIONE DEGLI ASTEROIDI MORTI
+    m_asteroids.erase(std::remove_if(m_asteroids.begin(), m_asteroids.end(), [](const Asteroid& a) {
+        return a.isDead();
+    }), m_asteroids.end());
 }
 
 void Game::handleScreenWrapping(){
@@ -184,4 +225,9 @@ void Game::updateViewport(unsigned int width, unsigned int height) {
     // Applichiamo il viewport percentuale (da 0.0 a 1.0)
     m_view.setViewport(sf::FloatRect({viewportLeft, viewportTop}, {viewportWidth, viewportHeight}));
     m_window.setView(m_view);
+}
+
+// Helper per calcolare la distanza euclidea tra due punti
+float getDistance(sf::Vector2f a, sf::Vector2f b) {
+    return std::hypot(a.x - b.x, a.y - b.y);
 }
