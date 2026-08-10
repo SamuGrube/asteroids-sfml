@@ -4,6 +4,7 @@
 #include <random>
 #include <cmath>
 #include "asteroid.hpp"
+#include "bullet.hpp"
 
 class Game {
 public:
@@ -38,4 +39,9 @@ private:
     void spawnAsteroids(std::size_t count);
 
     std::vector<Asteroid> m_asteroids; // Contenitore per gli asteroidi
+
+    // --- PROIETTILI TAPPA 05 ---
+    std::vector<Bullet> m_bullets; // Contenitore per i proiettili
+    sf::Time m_fireCooldown{sf::seconds(0.2f)}; // Tempo minimo tra due spari consecutivi
+    sf::Time m_fireTimer{sf::Time::Zero}; // Timer per gestire il cooldown dello sparo
 };

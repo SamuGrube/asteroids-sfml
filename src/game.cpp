@@ -1,7 +1,7 @@
 #include "headers/game.hpp"
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 04", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 05", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
@@ -102,6 +102,22 @@ void Game::update(sf::Time deltaTime) {
     for(auto& asteroid : m_asteroids){
         asteroid.update(deltaTime, GAME_WIDTH, GAME_HEIGHT);
     }
+
+    // 6. GESTIONE DELLO SPARO DEI PROIETTILI
+    m_fireTimer += deltaTime; // Aggiorniamo il timer del cooldown dello sparo
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) && m_fireTimer >= m_fireCooldown){
+        sf::Vector2f nosePosition = m_ship.getTransform().transformPoint({0.f, -20.f});
+
+        m_bullets.emplace_back(nosePosition, m_ship.getRotation().asDegrees()); // Creiamo un nuovo proiettile
+        m_fireTimer = sf::Time::Zero; // Resettiamo il timer del cooldown
+    }
+    for(auto& bullet : m_bullets){
+        bullet.update(deltaTime, GAME_WIDTH, GAME_HEIGHT);
+    }
+
+    m_bullets.erase(std::remove_if(m_bullets.begin(), m_bullets.end(), [](const Bullet& b) {
+        return b.isDead();
+    }), m_bullets.end());
 }
 
 void Game::handleScreenWrapping(){
@@ -135,6 +151,11 @@ void Game::render() {
     // Disegno asteroidi
     for (const auto& asteroid : m_asteroids) {
         asteroid.draw(m_window);
+    }
+
+    // Disegno proiettili
+    for (const auto& bullet : m_bullets) {
+        bullet.draw(m_window);
     }
     m_window.display();
 }
