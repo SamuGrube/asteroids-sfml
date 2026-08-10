@@ -1,7 +1,12 @@
 #include "headers/game.hpp"
 
+// Helper per calcolare la distanza euclidea tra due punti
+float getDistance(sf::Vector2f a, sf::Vector2f b) {
+    return std::hypot(a.x - b.x, a.y - b.y);
+}
+
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 05", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 06", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
@@ -121,7 +126,7 @@ void Game::update(sf::Time deltaTime) {
 
     // 7. GESTIONE DELLE COLLISIONI TRA PROIETTILI E ASTEROIDI
     std::vector<Asteroid> newAsteroids; // Contenitore per i nuovi asteroidi generati dalla distruzione di quelli vecchi
-    for(auto& asteroid : m_asteroids){
+    for(auto& bullet : m_bullets){
         if(bullet.isDead()) continue;
 
         for(auto& asteroid : m_asteroids){
@@ -131,9 +136,13 @@ void Game::update(sf::Time deltaTime) {
                 bullet.setDead(true);
                 asteroid.setDead(true);
 
-                //Se il raggio è > 20px, divide l'asteroide in due più piccoli
+                //Gestione suddivisione asteroidi
                 if(asteroid.getRadius() > 20.f){
-                    float newRadius = asteroid.getRadius() /2.f
+                    float newRadius = asteroid.getRadius() /2.f;
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                }else if(asteroid.getRadius() <= 20.f && asteroid.getRadius() > 10.f){
+                    float newRadius = asteroid.getRadius() /2.f;
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
                 }
@@ -141,6 +150,9 @@ void Game::update(sf::Time deltaTime) {
             }
         }
     }
+
+    // Inserisce i nuovi frammenti nel vettore principale
+    m_asteroids.insert(m_asteroids.end(), newAsteroids.begin(), newAsteroids.end());
 
     // 8. COLLISIONI TRA NAVICELLA E ASTEROIDI
     float shipRadius = 15.f; // Raggio approssimativo della navicella
@@ -225,9 +237,4 @@ void Game::updateViewport(unsigned int width, unsigned int height) {
     // Applichiamo il viewport percentuale (da 0.0 a 1.0)
     m_view.setViewport(sf::FloatRect({viewportLeft, viewportTop}, {viewportWidth, viewportHeight}));
     m_window.setView(m_view);
-}
-
-// Helper per calcolare la distanza euclidea tra due punti
-float getDistance(sf::Vector2f a, sf::Vector2f b) {
-    return std::hypot(a.x - b.x, a.y - b.y);
 }

@@ -1,7 +1,8 @@
 #include "headers/asteroid.hpp"
 
 Asteroid::Asteroid(sf::Vector2f position, float radius)
-    : m_radius(radius) 
+    : m_radius(radius),
+        m_isDead(false)
 {
     // Generatore di numeri casuali
     static std::random_device rd;
