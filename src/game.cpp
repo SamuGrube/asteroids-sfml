@@ -6,7 +6,7 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
 }
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 06", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 07", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
@@ -26,8 +26,17 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 06", sf::
     m_ship.setOutlineThickness(2.f);
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
 
-    //5 asteroidi iniziali
+    resetGame(); // Inizializza il gioco con vite e asteroidi
+}
+
+void Game::resetGame() {
+    m_lives = 3;
+    m_velocity = {0.f, 0.f};
+    m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+    m_asteroids.clear();
+    m_bullets.clear();
     spawnAsteroids(5);
+    std::cout << "Game reset! Lives: " << m_lives << std::endl;
 }
 
 void Game::spawnAsteroids(std::size_t count){
@@ -160,9 +169,16 @@ void Game::update(sf::Time deltaTime) {
         if(asteroid.isDead()) continue;
 
         if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
-            //Respawn della navicella al centro dello schermo
-            m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
-            m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+            m_lives--;
+            std::cout << "Collision! Lives left: " << m_lives << std::endl;
+            if(m_lives <= 0){
+                std::cout << "Game Over!" << std::endl;
+                resetGame(); // Resetta il gioco se le vite finiscono
+            }else {
+                //Respawn della navicella al centro dello schermo
+                m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+                m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+            }
             break;
         }
     }

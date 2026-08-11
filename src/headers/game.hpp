@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "asteroid.hpp"
 #include "bullet.hpp"
+#include <iostream>
 
 class Game {
 public:
@@ -45,4 +46,8 @@ private:
     std::vector<Bullet> m_bullets; // Contenitore per i proiettili
     sf::Time m_fireCooldown{sf::seconds(0.2f)}; // Tempo minimo tra due spari consecutivi
     sf::Time m_fireTimer{sf::Time::Zero}; // Timer per gestire il cooldown dello sparo
+
+    // --- VITE E GIOCO TAPPA 07 ---
+    int m_lives = 3; // Numero di vite iniziali
+    void resetGame(); // Metodo per resettare il gioco dopo la collisione
 };
