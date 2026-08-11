@@ -8,6 +8,12 @@
 #include "bullet.hpp"
 #include <iostream>
 
+enum class GameState {
+    MainMenu,
+    Playing,
+    GameOver
+};
+
 class Game {
 public:
     Game();      // Costruttore: inizializza la finestra e la navicella
@@ -50,4 +56,11 @@ private:
     // --- VITE E GIOCO TAPPA 07 ---
     int m_lives = 3; // Numero di vite iniziali
     void resetGame(); // Metodo per resettare il gioco dopo la collisione
+
+    // --- NUOVI MEMBRI TAPPA 08 ---
+    GameState m_state{GameState::MainMenu};
+    int m_score{0};
+
+    sf::Font m_font;
+    sf::Text m_uiText;
 };

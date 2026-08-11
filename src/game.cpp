@@ -6,13 +6,28 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
 }
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 07", sf::Style::Default) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 08", sf::Style::Default),
+               m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
     //Impostiamo la vista logica di gioco a 1024x768
     m_view.setSize({GAME_WIDTH, GAME_HEIGHT});
     m_view.setCenter({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_window.setView(m_view);
+
+    //Caricamento del font
+    bool fontLoaded = m_font.openFromFile("assets/arial.ttf") ||
+                    m_font.openFromFile("arial.ttf") ||
+                    m_font.openFromFile("../assets/arial.ttf") ||
+                    m_font.openFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+
+    if (!fontLoaded) {
+        std::cerr << "ERRORE CRITICO: Nessun font trovato! Impossibile avviare la GUI.\n";
+        std::exit(EXIT_FAILURE);
+    }
+
+    m_uiText.setFont(m_font);
+    m_uiText.setFillColor(sf::Color::White);
 
     // Setup della navicella
     m_ship.setPointCount(4);
@@ -27,6 +42,7 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 07", sf::
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
 
     resetGame(); // Inizializza il gioco con vite e asteroidi
+    m_state = GameState::MainMenu;
 }
 
 void Game::resetGame() {
@@ -78,6 +94,15 @@ void Game::processEvents() {
 
         if(const auto* resized = event->getIf<sf::Event::Resized>()){
             updateViewport(resized->size.x, resized->size.y);
+        }
+
+        if(const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()){
+            if(m_state == GameState::MainMenu && keyPressed->code == sf::Keyboard::Key::Enter) {
+                m_state = GameState::Playing;
+            }else if(m_state == GameState::GameOver && keyPressed->code == sf::Keyboard::Key::R) {
+                resetGame();
+                m_state = GameState::Playing;
+            }
         }
     }
 }
@@ -147,14 +172,16 @@ void Game::update(sf::Time deltaTime) {
 
                 //Gestione suddivisione asteroidi
                 if(asteroid.getRadius() > 20.f){
+                    m_score += 10;
                     float newRadius = asteroid.getRadius() /2.f;
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
                 }else if(asteroid.getRadius() <= 20.f && asteroid.getRadius() > 10.f){
+                    m_score += 50;
                     float newRadius = asteroid.getRadius() /2.f;
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
                     newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
-                }
+                }else m_score += 100;
                 break;
             }
         }
@@ -170,10 +197,8 @@ void Game::update(sf::Time deltaTime) {
 
         if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
             m_lives--;
-            std::cout << "Collision! Lives left: " << m_lives << std::endl;
             if(m_lives <= 0){
-                std::cout << "Game Over!" << std::endl;
-                resetGame(); // Resetta il gioco se le vite finiscono
+                m_state = GameState::GameOver;
             }else {
                 //Respawn della navicella al centro dello schermo
                 m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
@@ -187,6 +212,10 @@ void Game::update(sf::Time deltaTime) {
     m_asteroids.erase(std::remove_if(m_asteroids.begin(), m_asteroids.end(), [](const Asteroid& a) {
         return a.isDead();
     }), m_asteroids.end());
+
+    if(m_asteroids.empty() && m_state == GameState::Playing){
+        spawnAsteroids(5);
+    }
 }
 
 void Game::handleScreenWrapping(){
@@ -213,19 +242,44 @@ void Game::handleScreenWrapping(){
     m_ship.setPosition(pos);
 }
 
-// Disegno a schermo
+// Rendering differenziato in base allo stato del gioco (Menu, Gioco, Game Over)
 void Game::render() {
     m_window.clear(sf::Color::Black);
-    m_window.draw(m_ship);
-    // Disegno asteroidi
-    for (const auto& asteroid : m_asteroids) {
-        asteroid.draw(m_window);
+
+    if (m_state == GameState::MainMenu) {
+        m_uiText.setCharacterSize(40);
+        m_uiText.setString("ASTEROIDS");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 110.f, 250.f});
+        m_window.draw(m_uiText);
+
+        m_uiText.setCharacterSize(20);
+        m_uiText.setString("Premi SPAZIO per iniziare");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 350.f});
+        m_window.draw(m_uiText);
+    }
+    else if (m_state == GameState::Playing) {
+        m_window.draw(m_ship);
+        for (const auto& asteroid : m_asteroids) asteroid.draw(m_window);
+        for (const auto& bullet : m_bullets) bullet.draw(m_window);
+
+        // Disegno HUD (Punteggio e Vite)
+        m_uiText.setCharacterSize(20);
+        m_uiText.setString("SCORE: " + std::to_string(m_score) + "   LIVES: " + std::to_string(m_lives));
+        m_uiText.setPosition({20.f, 20.f});
+        m_window.draw(m_uiText);
+    }
+    else if (m_state == GameState::GameOver) {
+        m_uiText.setCharacterSize(40);
+        m_uiText.setString("GAME OVER");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 250.f});
+        m_window.draw(m_uiText);
+
+        m_uiText.setCharacterSize(20);
+        m_uiText.setString("Punteggio Finale: " + std::to_string(m_score) + "\nPremi 'R' per Riavviare");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 120.f, 330.f});
+        m_window.draw(m_uiText);
     }
 
-    // Disegno proiettili
-    for (const auto& bullet : m_bullets) {
-        bullet.draw(m_window);
-    }
     m_window.display();
 }
 
