@@ -6,7 +6,7 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
 }
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 09", sf::Style::Default),
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 10", sf::Style::Default),
                m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
@@ -51,10 +51,11 @@ void Game::resetGame() {
     m_velocity = {0.f, 0.f};
     m_wave = 1;
     m_speedMultiplier = 1.0f;
-    m_state = GameState::Playing;
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_asteroids.clear();
     m_bullets.clear();
+
+    m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità iniziale della navicella
     spawnAsteroids(5, m_speedMultiplier); // Genera 5 asteroidi all'inizio del gioco
 }
 
@@ -113,6 +114,14 @@ void Game::processEvents() {
 // Aggiornamento della logica (nella Tappa 01 non c'è movimento, quindi è vuoto)
 void Game::update(sf::Time deltaTime) {
     float dt = deltaTime.asSeconds(); //Tempo trascorso dall'ultimo frame in secondi
+
+    // Gestione dell'invulnerabilità della navicella dopo la collisione
+    if(m_state != GameState::Playing) return;
+
+    if(m_invulnerabilityTimer > sf::Time::Zero){
+        m_invulnerabilityTimer -= deltaTime;
+        if(m_invulnerabilityTimer < sf::Time::Zero) m_invulnerabilityTimer = sf::Time::Zero;
+    }
 
     // 1. ROTAZIONE (Sinistra/Destra)
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)){
@@ -194,20 +203,23 @@ void Game::update(sf::Time deltaTime) {
     m_asteroids.insert(m_asteroids.end(), newAsteroids.begin(), newAsteroids.end());
 
     // 8. COLLISIONI TRA NAVICELLA E ASTEROIDI
-    float shipRadius = 17.f; // Raggio approssimativo della navicella
-    for(auto& asteroid : m_asteroids){
-        if(asteroid.isDead()) continue;
+    if(m_invulnerabilityTimer <= sf::Time::Zero) { // Solo se la navicella non è invulnerabile
+        float shipRadius = 17.f; // Raggio approssimativo della navicella
+        for(auto& asteroid : m_asteroids){
+            if(asteroid.isDead()) continue;
 
-        if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
-            m_lives--;
-            if(m_lives <= 0){
-                m_state = GameState::GameOver;
-            }else {
-                //Respawn della navicella al centro dello schermo
-                m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
-                m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+            if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
+                m_lives--;
+                if(m_lives <= 0){
+                    m_state = GameState::GameOver;
+                }else {
+                    //Respawn della navicella al centro dello schermo
+                    m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+                    m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+                    m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità della navicella
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -264,13 +276,25 @@ void Game::render() {
         m_window.draw(m_uiText);
     }
     else if (m_state == GameState::Playing) {
-        m_window.draw(m_ship);
+        // Calcolo dell'effetto lampeggio (visibile ad intervalli di 0.1 secondi)
+        bool drawShip = true;
+        if (m_invulnerabilityTimer > sf::Time::Zero) {
+            int blink = static_cast<int>(m_invulnerabilityTimer.asSeconds() * 10.f);
+            if (blink % 2 == 0) {
+                drawShip = false; // Nasconde la navicella per un frame per creare il lampeggio
+            }
+        }
+
+        if (drawShip) {
+            m_window.draw(m_ship);
+        }
+
         for (const auto& asteroid : m_asteroids) asteroid.draw(m_window);
         for (const auto& bullet : m_bullets) bullet.draw(m_window);
 
-        // Disegno HUD (Punteggio e Vite)
+        // Disegno HUD
         m_uiText.setCharacterSize(20);
-        m_uiText.setString("SCORE: " + std::to_string(m_score) + "   LIVES: " + std::to_string(m_lives));
+        m_uiText.setString("SCORE: " + std::to_string(m_score) + "   LIVES: " + std::to_string(m_lives) + "   WAVE: " + std::to_string(m_wave));
         m_uiText.setPosition({20.f, 20.f});
         m_window.draw(m_uiText);
     }

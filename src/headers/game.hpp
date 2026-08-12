@@ -67,4 +67,8 @@ private:
     // --- NUOVI MEMBRI TAPPA 09 ---
     int m_wave{1}; // Numero dell'onda corrente
     float m_speedMultiplier{1.0f}; // Moltiplicatore di velocità per aumentare la difficoltà
+
+    // --- NUOVI MEMBRI TAPPA 10 ---
+    sf::Time m_invulnerabilityTimer{sf::Time::Zero}; // Timer per gestire l'invulnerabilità della navicella dopo la collisione
+    const sf::Time m_maxInvulnerabilityTime{sf::seconds(3.f)}; // Durata dell'invulnerabilità
 };
