@@ -1,8 +1,8 @@
 #include "headers/asteroid.hpp"
 
-Asteroid::Asteroid(sf::Vector2f position, float radius)
+Asteroid::Asteroid(sf::Vector2f position, float radius, float speedMultiplier)
     : m_radius(radius),
-        m_isDead(false)
+      m_isDead(false)
 {
     // Generatore di numeri casuali
     static std::random_device rd;
@@ -15,9 +15,9 @@ Asteroid::Asteroid(sf::Vector2f position, float radius)
 
     // Imposta velocità e rotazione casuali
     float angle = angleDist(gen);
-    float speed = speedDist(gen);
+    float speed = speedDist(gen) * speedMultiplier;
     m_velocity = sf::Vector2f(std::cos(angle) * speed, std::sin(angle) * speed);
-    m_rotationSpeed = rotDist(gen);
+    m_rotationSpeed = rotDist(gen) * speedMultiplier;
 
     // Generazione del poligono irregolare (8 vertici)
     std::size_t points = 8;

@@ -6,7 +6,7 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
 }
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 08", sf::Style::Default),
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 09", sf::Style::Default),
                m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
@@ -49,13 +49,16 @@ void Game::resetGame() {
     m_lives = 3;
     m_score = 0;
     m_velocity = {0.f, 0.f};
+    m_wave = 1;
+    m_speedMultiplier = 1.0f;
+    m_state = GameState::Playing;
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_asteroids.clear();
     m_bullets.clear();
-    spawnAsteroids(5);
+    spawnAsteroids(5, m_speedMultiplier); // Genera 5 asteroidi all'inizio del gioco
 }
 
-void Game::spawnAsteroids(std::size_t count){
+void Game::spawnAsteroids(std::size_t count, float speedMultiplier) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution xDist(0.f, GAME_WIDTH);
@@ -69,7 +72,7 @@ void Game::spawnAsteroids(std::size_t count){
             pos = sf::Vector2f(xDist(gen), yDist(gen));
         }while (std::hypot(pos.x - GAME_WIDTH / 2.f, pos.y - GAME_HEIGHT / 2.f) < 150.f);
 
-        m_asteroids.emplace_back(pos, 40.f); // Aggiungiamo un nuovo asteroide con raggio 40
+        m_asteroids.emplace_back(pos, 40.f, speedMultiplier); // Aggiungiamo un nuovo asteroide con raggio 40
     }
 }
 
@@ -214,7 +217,10 @@ void Game::update(sf::Time deltaTime) {
     }), m_asteroids.end());
 
     if(m_asteroids.empty() && m_state == GameState::Playing){
-        spawnAsteroids(5);
+        m_wave++;
+        m_speedMultiplier += 0.2f; // Aumentiamo la velocità degli asteroidi ad ogni onda successiva
+        std::size_t asteroidCount = 4 + m_wave; // Aumentiamo il numero di asteroidi ad ogni onda successiva
+        spawnAsteroids(5, m_speedMultiplier); // Genera nuovi asteroidi con il moltiplicatore di velocità aggiornato
     }
 }
 

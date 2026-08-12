@@ -5,7 +5,7 @@
 
 class Asteroid {
 public:
-    Asteroid(sf::Vector2f position, float radius);
+    Asteroid(sf::Vector2f position, float radius, float speedMultiplier = 1.0f);
 
     void update(sf::Time deltaTime, float gameWidth, float gameHeight);
     void draw(sf::RenderWindow& window) const;

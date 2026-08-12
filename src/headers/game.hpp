@@ -44,7 +44,7 @@ private:
     void handleScreenWrapping();
 
     // --- NUOVO METODO TAPPA 04 ---
-    void spawnAsteroids(std::size_t count);
+    void spawnAsteroids(std::size_t count, float speedMultiplier = 1.0f); // Metodo per generare asteroidi in posizioni casuali
 
     std::vector<Asteroid> m_asteroids; // Contenitore per gli asteroidi
 
@@ -63,4 +63,8 @@ private:
 
     sf::Font m_font;
     sf::Text m_uiText;
+
+    // --- NUOVI MEMBRI TAPPA 09 ---
+    int m_wave{1}; // Numero dell'onda corrente
+    float m_speedMultiplier{1.0f}; // Moltiplicatore di velocità per aumentare la difficoltà
 };
