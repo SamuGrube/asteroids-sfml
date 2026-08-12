@@ -47,12 +47,12 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 08", sf::
 
 void Game::resetGame() {
     m_lives = 3;
+    m_score = 0;
     m_velocity = {0.f, 0.f};
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_asteroids.clear();
     m_bullets.clear();
     spawnAsteroids(5);
-    std::cout << "Game reset! Lives: " << m_lives << std::endl;
 }
 
 void Game::spawnAsteroids(std::size_t count){
@@ -191,7 +191,7 @@ void Game::update(sf::Time deltaTime) {
     m_asteroids.insert(m_asteroids.end(), newAsteroids.begin(), newAsteroids.end());
 
     // 8. COLLISIONI TRA NAVICELLA E ASTEROIDI
-    float shipRadius = 15.f; // Raggio approssimativo della navicella
+    float shipRadius = 17.f; // Raggio approssimativo della navicella
     for(auto& asteroid : m_asteroids){
         if(asteroid.isDead()) continue;
 
