@@ -5,6 +5,25 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
     return std::hypot(a.x - b.x, a.y - b.y);
 }
 
+void Game::createExplosion(sf::Vector2f position, int count) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    
+    // Esplicitiamo <float> per evitare problemi di scope o deduzione dei tipi
+    std::uniform_real_distribution<float> angleDist(0.f, 2.f * 3.14159f);
+    std::uniform_real_distribution<float> speedDist(30.f, 150.f);
+    std::uniform_real_distribution<float> lifeDist(0.2f, 0.6f);
+
+    for (int i = 0; i < count; ++i) {
+        float angle = angleDist(gen);
+        float speed = speedDist(gen);
+        sf::Vector2f vel(std::cos(angle) * speed, std::sin(angle) * speed);
+        sf::Time lifetime = sf::seconds(lifeDist(gen));
+
+        m_particles.emplace_back(position, vel, lifetime, sf::Color::White);
+    }
+}
+
 // Costruttore: inizializza la finestra e prepara la navicella
 Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 10", sf::Style::Default),
                m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
@@ -16,7 +35,7 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 10", sf::
     m_window.setView(m_view);
 
     //Caricamento del font
-    bool fontLoaded = m_font.openFromFile("assets/arial.ttf") ||
+    bool fontLoaded = m_font.openFromFile("../../assets/arial.ttf") ||
                     m_font.openFromFile("arial.ttf") ||
                     m_font.openFromFile("../assets/arial.ttf") ||
                     m_font.openFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
@@ -54,6 +73,7 @@ void Game::resetGame() {
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_asteroids.clear();
     m_bullets.clear();
+    m_particles.clear();
 
     m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità iniziale della navicella
     spawnAsteroids(5, m_speedMultiplier); // Genera 5 asteroidi all'inizio del gioco
@@ -140,6 +160,11 @@ void Game::update(sf::Time deltaTime) {
 
         // Incrementiamo la velocità: v = v + a * dt
         m_velocity += direction * m_acceleration * dt;
+
+        // TAPPA 11: Creazione di particelle per l'effetto scia della navicella
+        sf::Vector2f exhaustPos = m_ship.getTransform().transformPoint({0.f, 15.f}); // Punto di uscita del getto (dietro la navicella)
+        sf::Vector2f exhaustVel = -direction * 120.f + sf::Vector2f((std::rand() % 40 - 20), (std::rand() % 40 - 20)); // Velocità casuale per le particelle
+        m_particles.emplace_back(exhaustPos, exhaustVel, sf::seconds(0.25f), sf::Color(255, 180, 50)); // Colore arancione per le particelle
     }
 
     // 3. APPLICAZIONE DELL'ATTRITO E SPOSTAMENTO
@@ -181,6 +206,9 @@ void Game::update(sf::Time deltaTime) {
             if(getDistance(bullet.getPosition(), asteroid.getPosition()) < asteroid.getRadius()){
                 bullet.setDead(true);
                 asteroid.setDead(true);
+
+                // Creiamo un'esplosione di particelle alla posizione dell'asteroide
+                createExplosion(asteroid.getPosition(), 15);
 
                 //Gestione suddivisione asteroidi
                 if(asteroid.getRadius() > 20.f){
@@ -234,6 +262,14 @@ void Game::update(sf::Time deltaTime) {
         std::size_t asteroidCount = 4 + m_wave; // Aumentiamo il numero di asteroidi ad ogni onda successiva
         spawnAsteroids(5, m_speedMultiplier); // Genera nuovi asteroidi con il moltiplicatore di velocità aggiornato
     }
+
+    // 10. AGGIORNAMENTO DELLE PARTICELLE
+    for(auto& particle : m_particles){
+        particle.update(deltaTime);
+    }
+    m_particles.erase(std::remove_if(m_particles.begin(), m_particles.end(), [](const Particle& p) {
+        return p.isDead();
+    }), m_particles.end());
 }
 
 void Game::handleScreenWrapping(){
@@ -271,7 +307,7 @@ void Game::render() {
         m_window.draw(m_uiText);
 
         m_uiText.setCharacterSize(20);
-        m_uiText.setString("Premi SPAZIO per iniziare");
+        m_uiText.setString("Premi INVIO per iniziare");
         m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 350.f});
         m_window.draw(m_uiText);
     }
@@ -291,6 +327,7 @@ void Game::render() {
 
         for (const auto& asteroid : m_asteroids) asteroid.draw(m_window);
         for (const auto& bullet : m_bullets) bullet.draw(m_window);
+        for (const auto& particle : m_particles) particle.draw(m_window);
 
         // Disegno HUD
         m_uiText.setCharacterSize(20);

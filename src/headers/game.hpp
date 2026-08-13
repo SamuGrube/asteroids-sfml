@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "asteroid.hpp"
 #include "bullet.hpp"
+#include "particle.hpp"
 #include <iostream>
 
 enum class GameState {
@@ -71,4 +72,9 @@ private:
     // --- NUOVI MEMBRI TAPPA 10 ---
     sf::Time m_invulnerabilityTimer{sf::Time::Zero}; // Timer per gestire l'invulnerabilità della navicella dopo la collisione
     const sf::Time m_maxInvulnerabilityTime{sf::seconds(3.f)}; // Durata dell'invulnerabilità
+
+    // --- NUOVI MEMBRI TAPPA 11 ---
+    std::vector<Particle> m_particles; // Contenitore per le particelle
+
+    void createExplosion(sf::Vector2f position, int count = 15); // Metodo per creare un'esplosione di particelle
 };
