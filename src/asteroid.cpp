@@ -61,3 +61,13 @@ void Asteroid::handleScreenWrapping(float gameWidth, float gameHeight) {
 void Asteroid::draw(sf::RenderWindow& window) const {
     window.draw(m_shape);
 }
+
+std::vector<sf::Vector2f> Asteroid::getGlobalVertices() const {
+    std::vector<sf::Vector2f> globalVerts;
+    sf::Transform transform = m_shape.getTransform();
+    
+    for (std::size_t i = 0; i < m_shape.getPointCount(); ++i) {
+        globalVerts.push_back(transform.transformPoint(m_shape.getPoint(i)));
+    }
+    return globalVerts;
+}

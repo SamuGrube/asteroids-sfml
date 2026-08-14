@@ -12,13 +12,13 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(tappa11
+add_executable(tappa12
     src/particle.cpp
     src/bullet.cpp
     src/asteroid.cpp
     src/game.cpp 
     src/main.cpp)
-target_compile_features(tappa11 PRIVATE cxx_std_17)
-target_link_libraries(tappa11 PRIVATE SFML::Graphics SFML::Window SFML::System)
+target_compile_features(tappa12 PRIVATE cxx_std_17)
+target_link_libraries(tappa12 PRIVATE SFML::Graphics SFML::Window SFML::System SFML::Audio)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)

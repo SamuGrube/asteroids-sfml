@@ -8,6 +8,7 @@
 #include "bullet.hpp"
 #include "particle.hpp"
 #include <iostream>
+#include <SFML/Audio.hpp>
 
 enum class GameState {
     MainMenu,
@@ -19,6 +20,7 @@ class Game {
 public:
     Game();      // Costruttore: inizializza la finestra e la navicella
     void run();  // Fa partire il ciclo principale
+    std::vector<sf::Vector2f> getShipGlobalVertices() const; // Metodo per ottenere i vertici globali della navicella
 
 private:
     void processEvents();
@@ -77,4 +79,23 @@ private:
     std::vector<Particle> m_particles; // Contenitore per le particelle
 
     void createExplosion(sf::Vector2f position, int count = 15); // Metodo per creare un'esplosione di particelle
+
+    // --- NUOVI MEMBRI TAPPA 12 ---
+    sf::SoundBuffer m_shootBuffer;
+    sf::SoundBuffer m_explosionBuffer;
+    sf::SoundBuffer m_hitBuffer;
+    sf::SoundBuffer m_gameOverBuffer;
+
+    sf::Sound m_shootSound{m_shootBuffer};
+    sf::Sound m_explosionSound{m_explosionBuffer};
+    sf::Sound m_hitSound{m_hitBuffer};
+    sf::Sound m_gameOverSound{m_gameOverBuffer};
+
+    sf::SoundBuffer m_beat1Buffer;
+    sf::SoundBuffer m_beat2Buffer;
+    sf::Sound m_beat1Sound{m_beat1Buffer};
+    sf::Sound m_beat2Sound{m_beat2Buffer};
+
+    sf::Time m_beatTimer{sf::Time::Zero};
+    bool m_playBeat1{true}; // Alterna tra i due beat per creare un effetto di ritmo
 };

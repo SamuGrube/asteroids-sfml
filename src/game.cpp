@@ -5,6 +5,61 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
     return std::hypot(a.x - b.x, a.y - b.y);
 }
 
+// Helper per centrare l'origine di qualsiasi sf::Text
+auto centerTextOrigin = [](sf::Text& text) {
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin({
+        bounds.position.x + bounds.size.x / 2.f,
+        bounds.position.y + bounds.size.y / 2.f
+    });
+};
+
+std::vector<sf::Vector2f> Game::getShipGlobalVertices() const{
+        sf::FloatRect bounds = m_ship.getGlobalBounds();
+        return std::vector<sf::Vector2f>({
+            {bounds.position.x + bounds.size.x / 2.f, bounds.position.y}, // Prua
+            {bounds.position.x + bounds.size.x, bounds.position.y + bounds.size.y}, // Lato destro
+            {bounds.position.x + bounds.size.x / 2.f, bounds.position.y + bounds.size.y}, // Coda
+            {bounds.position.x, bounds.position.y + bounds.size.y} // Lato sinistro
+        });
+}
+
+bool checkPolygonCollision(const std::vector<sf::Vector2f>& polyA, const std::vector<sf::Vector2f>& polyB) {
+    auto checkAxes = [](const std::vector<sf::Vector2f>& p1, const std::vector<sf::Vector2f>& p2) {
+        for (std::size_t i = 0; i < p1.size(); ++i) {
+            sf::Vector2f pStart = p1[i];
+            sf::Vector2f pEnd = p1[(i + 1) % p1.size()];
+            
+            // Perpendicolare del lato (Asse di proiezione)
+            sf::Vector2f edge = pEnd - pStart;
+            sf::Vector2f normal{-edge.y, edge.x};
+
+            // Proiezione dei vertici di PolyA sull'asse
+            float minA = std::numeric_limits<float>::max(), maxA = -std::numeric_limits<float>::max();
+            for (const auto& v : p1) {
+                float proj = v.x * normal.x + v.y * normal.y;
+                minA = std::min(minA, proj);
+                maxA = std::max(maxA, proj);
+            }
+
+            // Proiezione dei vertici di PolyB sull'asse
+            float minB = std::numeric_limits<float>::max(), maxB = -std::numeric_limits<float>::max();
+            for (const auto& v : p2) {
+                float proj = v.x * normal.x + v.y * normal.y;
+                minB = std::min(minB, proj);
+                maxB = std::max(maxB, proj);
+            }
+
+            // Se troviamo un'asse su cui le proiezioni non si sovrappongono, NON c'è collisione
+            if (maxA < minB || maxB < minA) return false;
+        }
+        return true;
+    };
+
+    // Bisogna controllare gli assi di entrambi i poligoni
+    return checkAxes(polyA, polyB) && checkAxes(polyB, polyA);
+}
+
 void Game::createExplosion(sf::Vector2f position, int count) {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -59,6 +114,37 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 10", sf::
     m_ship.setOutlineColor(sf::Color::White);
     m_ship.setOutlineThickness(2.f);
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+
+    // TAPPA 12: Caricamento Suoni. 
+    // Metti i file che ti ho generato nella cartella assets/
+    if (!m_shootBuffer.loadFromFile("../../assets/shoot.wav") && !m_shootBuffer.loadFromFile("shoot.wav")) {
+        std::cout << "[Audio] Avviso: shoot.wav non trovato!\n";
+    }
+    if (!m_explosionBuffer.loadFromFile("../../assets/explosion.wav") && !m_explosionBuffer.loadFromFile("explosion.wav")) {
+        std::cout << "[Audio] Avviso: explosion.wav non trovato!\n";
+    }
+    if (!m_hitBuffer.loadFromFile("../../assets/hit.wav") && !m_hitBuffer.loadFromFile("hit.wav")) {
+        std::cout << "[Audio] Avviso: hit.wav non trovato!\n";
+    }
+    if (!m_gameOverBuffer.loadFromFile("../../assets/gameover.wav") && !m_gameOverBuffer.loadFromFile("gameover.wav")) {
+        std::cout << "[Audio] Avviso: gameover.wav non trovato!\n";
+    }
+
+    // Regoliamo un po' i volumi
+    m_shootSound.setVolume(20.f);
+    m_explosionSound.setVolume(30.f);
+    m_hitSound.setVolume(30.f);
+    m_gameOverSound.setVolume(100.f);
+
+    if (!m_beat1Buffer.loadFromFile("../../assets/beat1.wav") && !m_beat1Buffer.loadFromFile("beat1.wav")) {
+        std::cout << "[Audio] Avviso: beat1.wav non trovato!\n";
+    }
+    if (!m_beat2Buffer.loadFromFile("../../assets/beat2.wav") && !m_beat2Buffer.loadFromFile("beat2.wav")) {
+        std::cout << "[Audio] Avviso: beat2.wav non trovato!\n";
+    }
+
+    m_beat1Sound.setVolume(100.f);
+    m_beat2Sound.setVolume(100.f);
 
     resetGame(); // Inizializza il gioco con vite e asteroidi
     m_state = GameState::MainMenu;
@@ -135,6 +221,27 @@ void Game::processEvents() {
 void Game::update(sf::Time deltaTime) {
     float dt = deltaTime.asSeconds(); //Tempo trascorso dall'ultimo frame in secondi
 
+    // --- LOGICA BATTITO CARDIACO (Basata su onde e tempo) ---
+
+    // 1. Il tempo di pausa diminuisce all'aumentare dell'ondata (es. da 0.9s iniziali fino a un minimo di 0.3s)
+    float baseInterval = std::max(0.3f, 0.9f - (static_cast<float>(m_wave - 1) * 0.1f));
+
+    // 2. Il battito accelera leggermente anche durante la stessa ondata man mano che il timer avanza
+    // (Puoi regolare questo fattore per rendere il crescendo più o meno rapido)
+    float beatDelay = baseInterval;
+
+    // 3. Aggiorna il timer
+    m_beatTimer -= deltaTime;
+    if (m_beatTimer <= sf::Time::Zero) {
+        if (m_playBeat1) {
+            m_beat1Sound.play();
+        } else {
+            m_beat2Sound.play();
+        }
+        m_playBeat1 = !m_playBeat1; // Alterna LUB e DUB
+        m_beatTimer = sf::seconds(beatDelay);
+    }
+
     // Gestione dell'invulnerabilità della navicella dopo la collisione
     if(m_state != GameState::Playing) return;
 
@@ -186,6 +293,8 @@ void Game::update(sf::Time deltaTime) {
 
         m_bullets.emplace_back(nosePosition, m_ship.getRotation().asDegrees()); // Creiamo un nuovo proiettile
         m_fireTimer = sf::Time::Zero; // Resettiamo il timer del cooldown
+
+        m_shootSound.play(); // Suono dello sparo
     }
     for(auto& bullet : m_bullets){
         bullet.update(deltaTime, GAME_WIDTH, GAME_HEIGHT);
@@ -209,18 +318,19 @@ void Game::update(sf::Time deltaTime) {
 
                 // Creiamo un'esplosione di particelle alla posizione dell'asteroide
                 createExplosion(asteroid.getPosition(), 15);
+                m_explosionSound.play(); // Suono dell'esplosione
 
                 //Gestione suddivisione asteroidi
                 if(asteroid.getRadius() > 20.f){
                     m_score += 10;
                     float newRadius = asteroid.getRadius() /2.f;
-                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
-                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius, m_speedMultiplier);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius, m_speedMultiplier);
                 }else if(asteroid.getRadius() <= 20.f && asteroid.getRadius() > 10.f){
                     m_score += 50;
                     float newRadius = asteroid.getRadius() /2.f;
-                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
-                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius, m_speedMultiplier);
+                    newAsteroids.emplace_back(asteroid.getPosition(), newRadius, m_speedMultiplier);
                 }else m_score += 100;
                 break;
             }
@@ -237,16 +347,21 @@ void Game::update(sf::Time deltaTime) {
             if(asteroid.isDead()) continue;
 
             if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
-                m_lives--;
-                if(m_lives <= 0){
-                    m_state = GameState::GameOver;
-                }else {
-                    //Respawn della navicella al centro dello schermo
-                    m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
-                    m_velocity = {0.f, 0.f}; // Resettiamo la velocità
-                    m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità della navicella
+                if(checkPolygonCollision(getShipGlobalVertices(), asteroid.getGlobalVertices())){
+                    m_lives--;
+                    if(m_lives <= 0){
+                        m_state = GameState::GameOver;
+                        m_gameOverSound.play(); // Suono del game over
+                    }else {
+                        m_hitSound.play(); // Suono della collisione con l'asteroide
+                        createExplosion(m_ship.getPosition(), 20); // Creiamo un'esplosione
+                        //Respawn della navicella al centro dello schermo
+                        m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+                        m_velocity = {0.f, 0.f}; // Resettiamo la velocità
+                        m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità della navicella
+                    }
+                    break;
                 }
-                break;
             }
         }
     }
@@ -308,7 +423,7 @@ void Game::render() {
 
         m_uiText.setCharacterSize(20);
         m_uiText.setString("Premi INVIO per iniziare");
-        m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 350.f});
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 105.f, 350.f});
         m_window.draw(m_uiText);
     }
     else if (m_state == GameState::Playing) {
@@ -336,15 +451,25 @@ void Game::render() {
         m_window.draw(m_uiText);
     }
     else if (m_state == GameState::GameOver) {
-        m_uiText.setCharacterSize(40);
-        m_uiText.setString("GAME OVER");
-        m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 250.f});
-        m_window.draw(m_uiText);
+        // --- SCHERMATA GAME OVER ---
+        sf::Text gameOverText(m_font, "GAME OVER", 60);
+        gameOverText.setFillColor(sf::Color::Red);
+        centerTextOrigin(gameOverText);
+        gameOverText.setPosition({1024.f / 2.f, 320.f}); // Centro schermo
+        m_window.draw(gameOverText);
 
-        m_uiText.setCharacterSize(20);
-        m_uiText.setString("Punteggio Finale: " + std::to_string(m_score) + "\nPremi 'R' per Riavviare");
-        m_uiText.setPosition({GAME_WIDTH / 2.f - 120.f, 330.f});
-        m_window.draw(m_uiText);
+        sf::Text scoreText(m_font, "PUNTEGGIO: " + std::to_string(m_score), 30);
+        scoreText.setFillColor(sf::Color::White);
+        centerTextOrigin(scoreText);
+        scoreText.setPosition({1024.f / 2.f, 380.f}); // Sotto al titolo
+        m_window.draw(scoreText);
+
+        // Istruzione Riavvio
+        sf::Text restartText(m_font, "PREMI R PER RICOMINCIARE", 24);
+        restartText.setFillColor(sf::Color::White);
+        centerTextOrigin(restartText);
+        restartText.setPosition({1024.f / 2.f, 420.f}); // Sotto al titolo
+        m_window.draw(restartText);
     }
 
     m_window.display();

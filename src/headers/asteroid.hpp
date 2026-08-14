@@ -15,6 +15,7 @@ public:
     float getRadius() const { return m_radius; }
     bool isDead() const { return m_isDead; }
     void setDead(bool dead) { m_isDead = dead; }
+    std::vector<sf::Vector2f> getGlobalVertices() const; // Metodo per ottenere i vertici globali dell'asteroide
 
 private:
     void handleScreenWrapping(float gameWidth, float gameHeight);
