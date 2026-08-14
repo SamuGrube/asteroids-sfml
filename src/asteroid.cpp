@@ -71,3 +71,32 @@ std::vector<sf::Vector2f> Asteroid::getGlobalVertices() const {
     }
     return globalVerts;
 }
+
+void Asteroid::setPosition(sf::Vector2f newPos) {
+    m_shape.setPosition(newPos);
+}
+
+void Asteroid::deflect() {
+    // 1. Calcola la velocità (magnitudo) attuale
+    float currentSpeed = std::hypot(m_velocity.x, m_velocity.y);
+    
+    // 2. Calcola l'angolo attuale di movimento in radianti
+    float currentAngle = std::atan2(m_velocity.y, m_velocity.x);
+    
+    // 3. Genera una deviazione casuale (es. tra 45° e 135°)
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    // 0.785 è circa 45 gradi, 2.356 è circa 135 gradi in radianti
+    std::uniform_real_distribution<float> angleDist(0.785f, 2.356f); 
+    std::uniform_int_distribution<int> signDist(0, 1);
+    
+    // Applica deviazione positiva (senso orario) o negativa (antiorario)
+    float randomOffset = angleDist(gen);
+    if (signDist(gen) == 0) randomOffset = -randomOffset;
+    
+    float newAngle = currentAngle + randomOffset;
+    
+    // 4. Riapplica la nuova direzione, mantenendo rigorosamente la velocità originale
+    m_velocity.x = std::cos(newAngle) * currentSpeed;
+    m_velocity.y = std::sin(newAngle) * currentSpeed;
+}

@@ -80,7 +80,7 @@ void Game::createExplosion(sf::Vector2f position, int count) {
 }
 
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 10", sf::Style::Default),
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 13", sf::Style::Default),
                m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
@@ -284,6 +284,38 @@ void Game::update(sf::Time deltaTime) {
     // 5. AGGIORNAMENTO DEGLI ASTEROIDI
     for(auto& asteroid : m_asteroids){
         asteroid.update(deltaTime, GAME_WIDTH, GAME_HEIGHT);
+    }
+
+    //COLLISIONI TRA ASTEROIDI
+    for (std::size_t i = 0; i < m_asteroids.size(); ++i) {
+        for (std::size_t j = i + 1; j < m_asteroids.size(); ++j) {
+            Asteroid& a1 = m_asteroids[i];
+            Asteroid& a2 = m_asteroids[j];
+
+            if (a1.isDead() || a2.isDead()) continue;
+
+            float dist = getDistance(a1.getPosition(), a2.getPosition());
+            float minDist = a1.getRadius() + a2.getRadius();
+
+            if (dist < minDist) {
+                // Sicurezza estrema: evita divisioni per zero se spawnati nell'esatto identico pixel
+                if (dist == 0.f) dist = 0.1f;
+
+                // A) RISOLUZIONE COMPENETRAZIONE (Overlap)
+                // Di quanti pixel si stanno sormontando?
+                float overlap = minDist - dist;
+                // Vettore normale della collisione (direzione da a1 a a2)
+                sf::Vector2f normal = (a2.getPosition() - a1.getPosition()) / dist;
+
+                // Spingiamo a1 indietro e a2 in avanti di metà sormonto per ciascuno
+                a1.setPosition(a1.getPosition() - normal * (overlap / 2.f));
+                a2.setPosition(a2.getPosition() + normal * (overlap / 2.f));
+
+                // B) DEVIAZIONE CASUALE
+                a1.deflect();
+                a2.deflect();
+            }
+        }
     }
 
     // 6. GESTIONE DELLO SPARO DEI PROIETTILI
