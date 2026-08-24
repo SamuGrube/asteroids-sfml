@@ -20,7 +20,6 @@ add_executable(tappa13
     src/main.cpp)
 target_compile_features(tappa13 PRIVATE cxx_std_23)
 target_link_libraries(tappa13 PRIVATE SFML::Graphics SFML::Window SFML::System SFML::Audio)
-target_compile_options(tappa13 PRIVATE -Wall -Wextra)
 if(MSVC)
     target_compile_options(tappa13 PRIVATE /W4)
 else()
