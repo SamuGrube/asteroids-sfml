@@ -18,7 +18,13 @@ add_executable(tappa13
     src/asteroid.cpp
     src/game.cpp 
     src/main.cpp)
-target_compile_features(tappa13 PRIVATE cxx_std_17)
+target_compile_features(tappa13 PRIVATE cxx_std_23)
 target_link_libraries(tappa13 PRIVATE SFML::Graphics SFML::Window SFML::System SFML::Audio)
+target_compile_options(tappa13 PRIVATE -Wall -Wextra)
+if(MSVC)
+    target_compile_options(tappa13 PRIVATE /W4)
+else()
+    target_compile_options(tappa13 PRIVATE -Wall -Wextra)
+endif()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)

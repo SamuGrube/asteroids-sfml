@@ -1,13 +1,10 @@
 #pragma once //Viene incluso una sola volta per file di compilazione
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include <random>
 #include <cmath>
-#include <algorithm>
 #include "asteroid.hpp"
 #include "bullet.hpp"
 #include "particle.hpp"
-#include <iostream>
 #include <SFML/Audio.hpp>
 
 enum class GameState {

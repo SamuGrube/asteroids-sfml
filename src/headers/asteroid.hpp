@@ -1,6 +1,5 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <random>
 #include <cmath>
 
 class Asteroid {
@@ -9,20 +8,13 @@ public:
 
     void update(sf::Time deltaTime, float gameWidth, float gameHeight);
     void draw(sf::RenderWindow& window) const;
-
-    // --- NUOVI METODI TAPPA 06 ---
+    void setDead(bool dead) { m_isDead = dead; }
+    void setPosition(sf::Vector2f newPos);
+    void deflect();
     sf::Vector2f getPosition() const { return m_shape.getPosition(); }
     float getRadius() const { return m_radius; }
     bool isDead() const { return m_isDead; }
-    void setDead(bool dead) { m_isDead = dead; }
-
-
     std::vector<sf::Vector2f> getGlobalVertices() const; // Metodo per ottenere i vertici globali dell'asteroide
-
-
-    //METODI TAPPA 13
-    void setPosition(sf::Vector2f newPos);
-    void deflect();
 private:
     void handleScreenWrapping(float gameWidth, float gameHeight);
 

@@ -1,4 +1,20 @@
 #include "headers/asteroid.hpp"
+#include <random>
+
+// Funzione helper per lo screen wrapping universale
+inline void applyScreenWrapping(sf::Vector2f& pos, float width, float height, float margin = 0.f) {
+    if (pos.x < -margin) {
+        pos.x = width + margin;
+    } else if (pos.x > width + margin) {
+        pos.x = -margin;
+    }
+
+    if (pos.y < -margin) {
+        pos.y = height + margin;
+    } else if (pos.y > height + margin) {
+        pos.y = -margin;
+    }
+}
 
 Asteroid::Asteroid(sf::Vector2f position, float radius, float speedMultiplier)
     : m_radius(radius),
@@ -8,7 +24,7 @@ Asteroid::Asteroid(sf::Vector2f position, float radius, float speedMultiplier)
     static std::random_device rd;
     static std::mt19937 gen(rd());
     
-    std::uniform_real_distribution angleDist(0.f, 2.f * 3.14159f);
+    std::uniform_real_distribution angleDist(0.f, 2.f * std::numbers::pi_v<float>);
     std::uniform_real_distribution speedDist(40.f, 120.f);
     std::uniform_real_distribution rotDist(-60.f, 60.f);
     std::uniform_real_distribution radiusJitter(0.75f, 1.25f);
@@ -24,12 +40,11 @@ Asteroid::Asteroid(sf::Vector2f position, float radius, float speedMultiplier)
     m_shape.setPointCount(points);
 
     for (std::size_t i = 0; i < points; ++i) {
-        float a = (static_cast<float>(i) / static_cast<float>(points)) * 2.f * 3.14159f;
+        float a = (static_cast<float>(i) / static_cast<float>(points)) * 2.f * std::numbers::pi_v<float>;
         float r = m_radius * radiusJitter(gen);
         m_shape.setPoint(i, sf::Vector2f(std::cos(a) * r, std::sin(a) * r));
     }
 
-    // Stile retrò
     m_shape.setFillColor(sf::Color::Transparent);
     m_shape.setOutlineColor(sf::Color::White);
     m_shape.setOutlineThickness(2.f);
@@ -48,13 +63,7 @@ void Asteroid::update(sf::Time deltaTime, float gameWidth, float gameHeight) {
 
 void Asteroid::handleScreenWrapping(float gameWidth, float gameHeight) {
     sf::Vector2f pos = m_shape.getPosition();
-
-    if (pos.x < -m_radius) pos.x = gameWidth + m_radius;
-    else if (pos.x > gameWidth + m_radius) pos.x = -m_radius;
-
-    if (pos.y < -m_radius) pos.y = gameHeight + m_radius;
-    else if (pos.y > gameHeight + m_radius) pos.y = -m_radius;
-
+    applyScreenWrapping(pos, gameWidth, gameHeight, m_radius); // Usa direttamente il raggio
     m_shape.setPosition(pos);
 }
 
@@ -77,7 +86,7 @@ void Asteroid::setPosition(sf::Vector2f newPos) {
 }
 
 void Asteroid::deflect() {
-    // 1. Calcola la velocità (magnitudo) attuale
+    // 1. Calcola la velocità attuale
     float currentSpeed = std::hypot(m_velocity.x, m_velocity.y);
     
     // 2. Calcola l'angolo attuale di movimento in radianti
@@ -96,7 +105,7 @@ void Asteroid::deflect() {
     
     float newAngle = currentAngle + randomOffset;
     
-    // 4. Riapplica la nuova direzione, mantenendo rigorosamente la velocità originale
+    // 4. Riapplica la nuova direzione, mantenendo la velocità originale
     m_velocity.x = std::cos(newAngle) * currentSpeed;
     m_velocity.y = std::sin(newAngle) * currentSpeed;
 }

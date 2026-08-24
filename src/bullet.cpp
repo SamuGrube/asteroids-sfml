@@ -1,4 +1,4 @@
-#include "headers/bullet.hpp" // Adatta il percorso se usi headers/Bullet.hpp
+#include "headers/bullet.hpp"
 
 Bullet::Bullet(sf::Vector2f position, float rotationAngle) {
     m_shape.setRadius(2.f);
@@ -6,7 +6,7 @@ Bullet::Bullet(sf::Vector2f position, float rotationAngle) {
     m_shape.setOrigin({2.f, 2.f}); // Centriamo il punto di origine del cerchio
     m_shape.setPosition(position);
 
-    float radians = rotationAngle * 3.14159f / 180.f;
+    float radians = rotationAngle * std::numbers::pi_v<float> / 180.f;
     float speed = 600.f; // Velocità del proiettile (px/s)
 
     m_velocity = sf::Vector2f(std::sin(radians) * speed, -std::cos(radians) * speed);
