@@ -5,36 +5,8 @@ float getDistance(sf::Vector2f a, sf::Vector2f b) {
     return std::hypot(a.x - b.x, a.y - b.y);
 }
 
-// Helper per centrare l'origine di qualsiasi sf::Text
-auto centerTextOrigin = [](sf::Text& text) {
-    sf::FloatRect bounds = text.getLocalBounds();
-    text.setOrigin({
-        bounds.position.x + bounds.size.x / 2.f,
-        bounds.position.y + bounds.size.y / 2.f
-    });
-};
-
-void Game::createExplosion(sf::Vector2f position, int count) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    
-    // Esplicitiamo <float> per evitare problemi di scope o deduzione dei tipi
-    std::uniform_real_distribution<float> angleDist(0.f, 2.f * 3.14159f);
-    std::uniform_real_distribution<float> speedDist(30.f, 150.f);
-    std::uniform_real_distribution<float> lifeDist(0.2f, 0.6f);
-
-    for (int i = 0; i < count; ++i) {
-        float angle = angleDist(gen);
-        float speed = speedDist(gen);
-        sf::Vector2f vel(std::cos(angle) * speed, std::sin(angle) * speed);
-        sf::Time lifetime = sf::seconds(lifeDist(gen));
-
-        m_particles.emplace_back(position, vel, lifetime, sf::Color::White);
-    }
-}
-
 // Costruttore: inizializza la finestra e prepara la navicella
-Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 11", sf::Style::Default),
+Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 09", sf::Style::Default),
                m_uiText(m_font) { //Finestra completa di titolo, pulsante di chiusura e ridimensionabile
     m_window.setFramerateLimit(60);
 
@@ -44,7 +16,7 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 11", sf::
     m_window.setView(m_view);
 
     //Caricamento del font
-    bool fontLoaded = m_font.openFromFile("../../assets/arial.ttf");
+    bool fontLoaded = m_font.openFromFile("../../Cartella-Risorse/arial.ttf");
 
     if (!fontLoaded) {
         std::cerr << "ERRORE CRITICO: Nessun font trovato! Impossibile avviare la GUI.\n";
@@ -76,12 +48,10 @@ void Game::resetGame() {
     m_velocity = {0.f, 0.f};
     m_wave = 1;
     m_speedMultiplier = 1.0f;
+    m_state = GameState::Playing;
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
     m_asteroids.clear();
     m_bullets.clear();
-    m_particles.clear();
-
-    m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità iniziale della navicella
     spawnAsteroids(5, m_speedMultiplier); // Genera 5 asteroidi all'inizio del gioco
 }
 
@@ -141,13 +111,7 @@ void Game::processEvents() {
 void Game::update(sf::Time deltaTime) {
     float dt = deltaTime.asSeconds(); //Tempo trascorso dall'ultimo frame in secondi
 
-    // Gestione dell'invulnerabilità della navicella dopo la collisione
     if(m_state != GameState::Playing) return;
-
-    if(m_invulnerabilityTimer > sf::Time::Zero){
-        m_invulnerabilityTimer -= deltaTime;
-        if(m_invulnerabilityTimer < sf::Time::Zero) m_invulnerabilityTimer = sf::Time::Zero;
-    }
 
     // 1. ROTAZIONE (Sinistra/Destra)
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)){
@@ -166,11 +130,6 @@ void Game::update(sf::Time deltaTime) {
 
         // Incrementiamo la velocità: v = v + a * dt
         m_velocity += direction * m_acceleration * dt;
-
-        // TAPPA 11: Creazione di particelle per l'effetto scia della navicella
-        sf::Vector2f exhaustPos = m_ship.getTransform().transformPoint({0.f, 15.f}); // Punto di uscita del getto (dietro la navicella)
-        sf::Vector2f exhaustVel = -direction * 120.f + sf::Vector2f((std::rand() % 40 - 20), (std::rand() % 40 - 20)); // Velocità casuale per le particelle
-        m_particles.emplace_back(exhaustPos, exhaustVel, sf::seconds(0.25f));
     }
 
     // 3. APPLICAZIONE DELL'ATTRITO E SPOSTAMENTO
@@ -213,9 +172,6 @@ void Game::update(sf::Time deltaTime) {
                 bullet.setDead(true);
                 asteroid.setDead(true);
 
-                // Creiamo un'esplosione di particelle alla posizione dell'asteroide
-                createExplosion(asteroid.getPosition(), 15);
-
                 //Gestione suddivisione asteroidi
                 if(asteroid.getRadius() > 20.f){
                     m_score += 10;
@@ -237,23 +193,20 @@ void Game::update(sf::Time deltaTime) {
     m_asteroids.insert(m_asteroids.end(), newAsteroids.begin(), newAsteroids.end());
 
     // 8. COLLISIONI TRA NAVICELLA E ASTEROIDI
-    if(m_invulnerabilityTimer <= sf::Time::Zero) { // Solo se la navicella non è invulnerabile
-        float shipRadius = 17.f; // Raggio approssimativo della navicella
-        for(auto& asteroid : m_asteroids){
-            if(asteroid.isDead()) continue;
+    float shipRadius = 17.f; // Raggio approssimativo della navicella
+    for(auto& asteroid : m_asteroids){
+        if(asteroid.isDead()) continue;
 
-            if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
-                m_lives--;
-                if(m_lives <= 0){
-                    m_state = GameState::GameOver;
-                }else {
-                    //Respawn della navicella al centro dello schermo
-                    m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
-                    m_velocity = {0.f, 0.f}; // Resettiamo la velocità
-                    m_invulnerabilityTimer = m_maxInvulnerabilityTime; // Imposta l'invulnerabilità della navicella
-                }
-                break;
+        if(getDistance(m_ship.getPosition(), asteroid.getPosition()) < (asteroid.getRadius() + shipRadius)){
+            m_lives--;
+            if(m_lives <= 0){
+                m_state = GameState::GameOver;
+            }else {
+                //Respawn della navicella al centro dello schermo
+                m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
+                m_velocity = {0.f, 0.f}; // Resettiamo la velocità
             }
+            break;
         }
     }
 
@@ -268,14 +221,6 @@ void Game::update(sf::Time deltaTime) {
         std::size_t asteroidCount = 4 + m_wave; // Aumentiamo il numero di asteroidi ad ogni onda successiva
         spawnAsteroids(asteroidCount, m_speedMultiplier); // Genera nuovi asteroidi con il moltiplicatore di velocità aggiornato
     }
-
-    // 10. AGGIORNAMENTO DELLE PARTICELLE
-    for(auto& particle : m_particles){
-        particle.update(deltaTime);
-    }
-    m_particles.erase(std::remove_if(m_particles.begin(), m_particles.end(), [](const Particle& p) {
-        return p.isDead();
-    }), m_particles.end());
 }
 
 void Game::handleScreenWrapping(){
@@ -318,49 +263,26 @@ void Game::render() {
         m_window.draw(m_uiText);
     }
     else if (m_state == GameState::Playing) {
-        // Calcolo dell'effetto lampeggio (visibile ad intervalli di 0.1 secondi)
-        bool drawShip = true;
-        if (m_invulnerabilityTimer > sf::Time::Zero) {
-            int blink = static_cast<int>(m_invulnerabilityTimer.asSeconds() * 10.f);
-            if (blink % 2 == 0) {
-                drawShip = false; // Nasconde la navicella per un frame per creare il lampeggio
-            }
-        }
-
-        if (drawShip) {
-            m_window.draw(m_ship);
-        }
-
+        m_window.draw(m_ship);
         for (const auto& asteroid : m_asteroids) asteroid.draw(m_window);
         for (const auto& bullet : m_bullets) bullet.draw(m_window);
-        for (const auto& particle : m_particles) particle.draw(m_window);
 
-        // Disegno HUD
+        // Disegno HUD (Punteggio e Vite)
         m_uiText.setCharacterSize(20);
-        m_uiText.setString("SCORE: " + std::to_string(m_score) + "   LIVES: " + std::to_string(m_lives) + "   WAVE: " + std::to_string(m_wave));
+        m_uiText.setString("SCORE: " + std::to_string(m_score) + "   LIVES: " + std::to_string(m_lives));
         m_uiText.setPosition({20.f, 20.f});
         m_window.draw(m_uiText);
     }
     else if (m_state == GameState::GameOver) {
-        // --- SCHERMATA GAME OVER ---
-        sf::Text gameOverText(m_font, "GAME OVER", 60);
-        gameOverText.setFillColor(sf::Color::White);
-        centerTextOrigin(gameOverText);
-        gameOverText.setPosition({1024.f / 2.f, 320.f}); // Centro schermo
-        m_window.draw(gameOverText);
+        m_uiText.setCharacterSize(40);
+        m_uiText.setString("GAME OVER");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 130.f, 250.f});
+        m_window.draw(m_uiText);
 
-        sf::Text scoreText(m_font, "PUNTEGGIO: " + std::to_string(m_score), 30);
-        scoreText.setFillColor(sf::Color::White);
-        centerTextOrigin(scoreText);
-        scoreText.setPosition({1024.f / 2.f, 380.f}); // Sotto al titolo
-        m_window.draw(scoreText);
-
-        // Istruzione Riavvio
-        sf::Text restartText(m_font, "PREMI R PER RICOMINCIARE", 24);
-        restartText.setFillColor(sf::Color::White);
-        centerTextOrigin(restartText);
-        restartText.setPosition({1024.f / 2.f, 420.f}); // Sotto al titolo
-        m_window.draw(restartText);
+        m_uiText.setCharacterSize(20);
+        m_uiText.setString("Punteggio Finale: " + std::to_string(m_score) + "\nPremi 'R' per Riavviare");
+        m_uiText.setPosition({GAME_WIDTH / 2.f - 120.f, 330.f});
+        m_window.draw(m_uiText);
     }
 
     m_window.display();

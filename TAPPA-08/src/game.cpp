@@ -16,7 +16,7 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 08", sf::
     m_window.setView(m_view);
 
     //Caricamento del font
-    bool fontLoaded = m_font.openFromFile("../../assets/arial.ttf");
+    bool fontLoaded = m_font.openFromFile("../../Cartella-Risorse/arial.ttf");
 
     if (!fontLoaded) {
         std::cerr << "ERRORE CRITICO: Nessun font trovato! Impossibile avviare la GUI.\n";

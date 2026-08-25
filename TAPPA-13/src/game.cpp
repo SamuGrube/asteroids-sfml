@@ -43,7 +43,7 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids", sf::Style::Defa
     m_window.setView(m_view);
 
     //Caricamento del font
-    bool fontLoaded = m_font.openFromFile("../../assets/arial.ttf");
+    bool fontLoaded = m_font.openFromFile("../../Cartella-Risorse/arial.ttf");
 
     if (!fontLoaded) {
         std::cerr << "ERRORE CRITICO: Nessun font trovato! Impossibile avviare la GUI.\n";
@@ -66,22 +66,22 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids", sf::Style::Defa
     m_ship.setPosition({GAME_WIDTH / 2.f, GAME_HEIGHT / 2.f});
 
     //Caricamento Suoni. 
-    if (!m_shootBuffer.loadFromFile("../../assets/shoot.wav") && !m_shootBuffer.loadFromFile("shoot.wav")) {
+    if (!m_shootBuffer.loadFromFile("../../Cartella-Risorse/shoot.wav") && !m_shootBuffer.loadFromFile("shoot.wav")) {
         std::cout << "[Audio] Avviso: shoot.wav non trovato!\n";
     }
-    if (!m_explosionBuffer.loadFromFile("../../assets/explosion.wav") && !m_explosionBuffer.loadFromFile("explosion.wav")) {
+    if (!m_explosionBuffer.loadFromFile("../../Cartella-Risorse/explosion.wav") && !m_explosionBuffer.loadFromFile("explosion.wav")) {
         std::cout << "[Audio] Avviso: explosion.wav non trovato!\n";
     }
-    if (!m_hitBuffer.loadFromFile("../../assets/hit.wav") && !m_hitBuffer.loadFromFile("hit.wav")) {
+    if (!m_hitBuffer.loadFromFile("../../Cartella-Risorse/hit.wav") && !m_hitBuffer.loadFromFile("hit.wav")) {
         std::cout << "[Audio] Avviso: hit.wav non trovato!\n";
     }
-    if (!m_gameOverBuffer.loadFromFile("../../assets/gameover.wav") && !m_gameOverBuffer.loadFromFile("gameover.wav")) {
+    if (!m_gameOverBuffer.loadFromFile("../../Cartella-Risorse/gameover.wav") && !m_gameOverBuffer.loadFromFile("gameover.wav")) {
         std::cout << "[Audio] Avviso: gameover.wav non trovato!\n";
     }
-    if (!m_beat1Buffer.loadFromFile("../../assets/beat1.wav") && !m_beat1Buffer.loadFromFile("beat1.wav")) {
+    if (!m_beat1Buffer.loadFromFile("../../Cartella-Risorse/beat1.wav") && !m_beat1Buffer.loadFromFile("beat1.wav")) {
         std::cout << "[Audio] Avviso: beat1.wav non trovato!\n";
     }
-    if (!m_beat2Buffer.loadFromFile("../../assets/beat2.wav") && !m_beat2Buffer.loadFromFile("beat2.wav")) {
+    if (!m_beat2Buffer.loadFromFile("../../Cartella-Risorse/beat2.wav") && !m_beat2Buffer.loadFromFile("beat2.wav")) {
         std::cout << "[Audio] Avviso: beat2.wav non trovato!\n";
     }
 
