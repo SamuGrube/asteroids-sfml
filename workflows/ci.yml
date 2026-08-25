@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-        - { name: Windows,     os: windows-latest }
-        - { name: Linux GCC,   os: ubuntu-latest }
+        - { name: Windows,    os: windows-latest }
+        - { name: Linux GCC,  os: ubuntu-latest }
         - { name: Linux Clang, os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
-        - { name: macOS,       os: macos-latest  }
+        - { name: macOS,      os: macos-latest  }
         config:
         - { name: Shared, flags: -DBUILD_SHARED_LIBS=TRUE }
         - { name: Static, flags: -DBUILD_SHARED_LIBS=FALSE }
@@ -26,13 +26,15 @@ jobs:
     steps:
     - name: Install Linux Dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev libssh2-1-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxrandr-dev libxcursor-dev libxi-dev libudev-dev libflac-dev libvorbis-dev libgl1-mesa-dev libegl1-mesa-dev libfreetype-dev libharfbuzz-dev libmbedtls-dev libssh2-1-dev
 
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
-    - name: Configure
+    - name: Configure CMake
       run: cmake -B build ${{matrix.platform.flags}} ${{matrix.config.flags}}
 
-    - name: Build
-      run: cmake --build build --config Release
+    - name: Build All Tappe
+      run: cmake --build build --config Release --parallel
