@@ -21,6 +21,11 @@ dalla radice del progetto:
 # 1. Configurazione del progetto CMake
 cmake -B build
 
+# In caso di errore su Windows tentare con:
+Remove-Item -Recurse -Force build  
+# E poi:
+cmake -S . -B build -G "MinGW Makefiles"
+
 # 2. Compilazione di tutte le tappe insieme
 cmake --build build
 ```
