@@ -138,10 +138,10 @@ Game::Game() : m_window(sf::VideoMode({1024, 768}), "Asteroids - Tappa 12", sf::
     m_hitSound.setVolume(30.f);
     m_gameOverSound.setVolume(100.f);
 
-    if (!m_beat1Buffer.loadFromFile("../../assets/beat1.wav") && !m_beat1Buffer.loadFromFile("beat1.wav")) {
+    if (!m_beat1Buffer.loadFromFile("../../Cartella-Risorse/beat1.wav") && !m_beat1Buffer.loadFromFile("beat1.wav")) {
         std::cout << "[Audio] Avviso: beat1.wav non trovato!\n";
     }
-    if (!m_beat2Buffer.loadFromFile("../../assets/beat2.wav") && !m_beat2Buffer.loadFromFile("beat2.wav")) {
+    if (!m_beat2Buffer.loadFromFile("../../Cartella-Risorse/beat2.wav") && !m_beat2Buffer.loadFromFile("beat2.wav")) {
         std::cout << "[Audio] Avviso: beat2.wav non trovato!\n";
     }
 
